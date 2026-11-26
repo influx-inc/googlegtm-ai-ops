@@ -12,7 +12,7 @@ Each item has a result the next session can use. If a selected item contains two
 | --- | --- | --- | --- | --- |
 | 1 | [Confirm the baseline](#starting-configuration) | Read access to GTM and HubSpot | The current GTM workspace and pending changes, HubSpot portal and loader, and consent behavior are recorded. | Complete |
 | 2 | [Map the three contact fields](#map-and-read-the-submitted-values) | 1 | The active controls and submitted keys are verified with synthetic input and a blocked booking request. Record the keys that item 3 must verify on success. | Complete |
-| 3 | [Prove a usable booking success signal](#verify-the-success-signal) | 2 and an approved test booking | Evidence identifies a new confirmed booking, distinguishes it from an attempt or revisit, and shows how GTM can match it to the submitted values. Close any field mapping left open by item 2. | Pending |
+| 3 | [Prove a usable booking success signal](#verify-the-success-signal) | 2 and an approved test booking | Evidence identifies a new confirmed booking, distinguishes it from an attempt or revisit, and shows how GTM can match it to the submitted values. Close any field mapping left open by item 2. | Complete |
 | 4 | [Check cross-domain tracking](#create-the-contact-and-preserve-attribution) | 1 | The actual Influx link and Cal.com landing carry the same portal's tracking identity with consent. Record any break and where it occurs. | Pending |
 | 5 | [Build and verify the GTM capture](#define-gtm-tags-and-the-success-event) | 2 and 3 | The scoped capture tag works in Preview. Verify the three fields, the success event, and silence on failure, reschedule, repeat handling, and denied consent using synthetic checks where possible. Record the draft GTM change IDs. | Pending |
 | 6 | [Wire HubSpot identification](#create-the-contact-and-preserve-attribution) | 5 | The exact delivery command and any HubSpot event name are recorded. Preview proves one three-field handoff and the two tracker calls in order, using a browser-only check with collection blocked. | Pending |
@@ -25,9 +25,9 @@ Each item has a result the next session can use. If a selected item contains two
 
 Update the selected row to **Complete** when its done condition is met. Use **In progress** if a later session can continue from partial results, or **Blocked** if it needs access, approval, or a missing capability. A resumable **In progress** item takes priority over starting another pending item. Include the date, item number, what changed, checks run and their results, and the exact next action or blocker in the latest handoff below. Link to sanitized evidence and include any GTM workspace change IDs. Keep project files here and commit only the repository changes for the selected item.
 
-**Latest handoff — 26 November 2026, item 2 complete.** Verified name, email, and company in the active form and in two intercepted `POST /api/book/event` requests. Both requests were blocked before reaching Cal.com. The user limited HubSpot delivery to these three answers. See [field evidence](field-mapping.md) and [the GTM and HubSpot baseline](baseline.md).
+**Latest handoff — 26 November 2026, item 3 complete.** One approved live booking returned `ACCEPTED` with a `uid` and all three contact fields. Cal.com pushed `bookingSuccessful` and `bookingSuccessfulV2`. Use `bookingSuccessful` for the confirmed booking and its contact data. One explicitly approved HubSpot tracking request returned `200`. Cal.com's existing integration created the matching contact. HubSpot showed zero tracked page views for it at the follow-up check. [Booking and delivery evidence](booking-success.md) · [Field evidence](field-mapping.md) · [GTM and HubSpot baseline](baseline.md)
 
-**Next** — Obtain approval for a test booking, then verify the successful response and the browser signal GTM can use to correlate it with `responses.name`, `responses.email`, and `responses.company`.
+**Next** — Start item 4 by finding the Influx link for **Meet with Influx**. The localhost homepage's Cal.com link opens the separate **Influx Discovery Call** event. Verify cross-domain linking on the intended route, then use the verified event and field paths in item 5.
 
 ## Starting configuration
 
@@ -46,6 +46,8 @@ Start with the [repository instructions](../../AGENTS.md), [GTM workspace operat
 ## Capture the booking and its fields in GTM
 
 ### Verify the success signal
+
+The approved test established `bookingSuccessful` as the hosted GTM event. Read the accepted booking's identifier and three answers from `data.booking.uid` and `data.booking.responses` on that event. The [booking evidence](booking-success.md) records the event predicates and the source used to verify the payload.
 
 1. Start with localhost for the capture logic and use GTM Preview and Tag Assistant on the hosted Cal.com flow to discover the real behavior. Use an approved test booking and test data for any check that creates a booking or contact. Preserve the browser network log across navigation.
 2. Follow the normal journey from the Influx link through slot selection, form submission, and confirmation. Inspect GTM events, browser navigation, and the successful booking response to locate a browser-side signal that GTM can consume. Prefer a Cal.com success event if it is available on this hosted page. Confirm its exact name or predicate, timing, whether the document survives, how it identifies this event type and a new booking, and whether it exposes a stable booking identifier and the submitted values. A booking response visible in DevTools establishes what happened during the test. Separately verify that the GTM tag can access the chosen signal in the browser.
