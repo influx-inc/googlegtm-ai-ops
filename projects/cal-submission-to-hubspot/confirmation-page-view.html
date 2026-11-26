@@ -1,0 +1,58 @@
+<script>
+(function () {
+  var eventName = {{Event}};
+  var bookingPath = /^\/team\/influx\/meet-with-influx\/?$/;
+  if (location.hostname !== 'cal.com' || !bookingPath.test(location.pathname)) return;
+
+  if (eventName === 'gtm.js') {
+    if (window.influxCalHubSpot) return;
+    var state = window.influxCalHubSpot = {
+      analyticsAllowed: false,
+      sent: Object.create(null)
+    };
+    window._hsp = window._hsp || [];
+    window._hsp.push(['addPrivacyConsentListener', function (consent) {
+      state.analyticsAllowed = Boolean(consent && consent.allowed === true &&
+        (!consent.categories || consent.categories.analytics === true));
+    }]);
+    return;
+  }
+
+  var tracking = window.influxCalHubSpot;
+  if (eventName !== 'bookingSuccessful' || !tracking || !tracking.analyticsAllowed) return;
+
+  // Cal.com provides the booking on this data layer event before navigation.
+  var events = window.dataLayer || [];
+  var message;
+  for (var i = events.length - 1; i >= 0; i--) {
+    if (events[i] && events[i].event === eventName) {
+      message = events[i].data;
+      break;
+    }
+  }
+  var booking = message && message.booking;
+  var eventType = message && message.eventType;
+  if (!booking || !eventType || String(eventType.id) !== '6074585' ||
+      eventType.successRedirectUrl || message.confirmed !== true ||
+      booking.status !== 'ACCEPTED' || booking.paymentUid ||
+      typeof booking.uid !== 'string' || !booking.uid || tracking.sent[booking.uid]) return;
+
+  var responses = booking.responses || {};
+  var name = typeof responses.name === 'string' ? responses.name.trim() : '';
+  var email = typeof responses.email === 'string' ? responses.email.trim() : '';
+  var company = typeof responses.company === 'string' ? responses.company.trim() : '';
+  if (!name || !company || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return;
+
+  var nameParts = name.split(/\s+/);
+  var identity = { email: email, firstname: nameParts.shift(), company: company };
+  if (nameParts.length) identity.lastname = nameParts.join(' ');
+
+  // HubSpot also sends the current URL independently of setPath. Send before
+  // Cal.com adds the booking ID and attendee email to the confirmation URL.
+  var queue = window._hsq = window._hsq || [];
+  tracking.sent[booking.uid] = true;
+  queue.push(['identify', identity]);
+  queue.push(['setPath', '/booking']);
+  queue.push(['trackPageView']);
+})();
+</script>
