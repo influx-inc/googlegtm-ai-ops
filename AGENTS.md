@@ -1,5 +1,6 @@
 # Google Tag Manager instructions
 
+- Use the project's local `gtm` MCP server to read and update Google Tag Manager.
 - Before editing GTM, verify the account, container, and workspace against the request. Ask if you find multiple plausible targets.
 - Inspect the existing configuration and pending workspace changes first. Follow the container's naming conventions and preserve unrelated edits.
 - Make requested changes in the workspace. Get explicit authorization before publishing, rolling back a live version, deleting existing configuration, or changing account access.

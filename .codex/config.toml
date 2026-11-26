@@ -1,0 +1,3 @@
+[mcp_servers.gtm]
+command = "sh"
+args = ["scripts/gtm-mcp.sh"]
