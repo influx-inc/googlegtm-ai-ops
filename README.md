@@ -11,11 +11,11 @@ Both terminal clients run the [Stape GTM MCP server](https://github.com/stape-io
 Enable the Tag Manager API in your Google Cloud project and download a [desktop OAuth client JSON file](https://developers.google.com/identity/protocols/oauth2/native-app). Then run the following with its local path and sign in with the Google account that has GTM access.
 
 ```sh
-mkdir -p -m 700 "$HOME/.config/googlegtm-ai-ops"
-CLOUDSDK_CONFIG="$HOME/.config/googlegtm-ai-ops" gcloud auth application-default login \
-  --client-id-file="/path/to/client_secret.json" \
-  --disable-quota-project \
-  --scopes="https://www.googleapis.com/auth/tagmanager.edit.containers,https://www.googleapis.com/auth/tagmanager.edit.containerversions"
+python3 -m venv "$HOME/.config/googlegtm-ai-ops/oauth-venv"
+"$HOME/.config/googlegtm-ai-ops/oauth-venv/bin/python" -m pip install 'google-auth-oauthlib==1.5.0'
+"$HOME/.config/googlegtm-ai-ops/oauth-venv/bin/python" scripts/gtm-login.py "/path/to/client_secret.json"
 ```
+
+The sign-in grants access to GTM workspaces and container versions.
 
 Launch `codex` or `claude` from the repository root. Trust the project in Codex or approve `gtm` on first launch in Claude Code if prompted. Ask the agent to list GTM accounts to verify access.
