@@ -4,6 +4,11 @@ Use this repository with Codex or Claude Code to audit, update, and test tags, t
 
 Open either agent from the repository root and describe the task. Include the GTM container and workspace if you know them. Edit [AGENTS.md](AGENTS.md) to update the instructions for both agents. Claude Code loads it through [CLAUDE.md](CLAUDE.md).
 
+## Reference guides
+
+- [Google Tag Manager](docs/README.md) covers workspace changes, triggers, consent, Preview, and browser debugging.
+- [HubSpot tracking code](platforms/hubspot-tracking-code/README.md) covers the Influx setup, browser API, consent, forms, and test evidence.
+
 ## Google Tag Manager sign-in
 
 Both terminal clients run the [Stape GTM MCP server](https://github.com/stape-io/google-tag-manager-mcp-server) locally as `gtm`. On this Mac, the launcher uses Node.js and a Google OAuth login shared by both clients.
