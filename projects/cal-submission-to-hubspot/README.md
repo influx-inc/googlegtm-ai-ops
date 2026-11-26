@@ -2,6 +2,31 @@
 
 Use Google Tag Manager (GTM) to capture the submitted values from **Meet with Influx** and detect when Cal.com confirms a new booking. On confirmation, use the existing HubSpot tracking code to create a contact if the primary booker's email is new or update the contact that already matches it. In both cases, HubSpot must associate the analytics recorded for that visitor across the Influx and Cal.com domains, including page history and available source, referrer, and campaign details.
 
+## Start here for each session
+
+If the user points you at this relay without naming a task, pick **one work item** from the queue. Read the repository instructions and the latest handoff first. Take the first pending item whose prerequisites are complete and whose access and approvals are available. If a blocked item still needs input, continue with the next independent item. An explicit user request takes priority over the queue order.
+
+Each item has a result the next session can use. If a selected item contains two substantial checks or changes that cannot reasonably fit together, split it in the queue before starting and take the first ready part. End the session after verifying and handing off that item. If you hit a blocker mid-item, save any verified partial results and record what would unblock the remainder.
+
+| Item | Work for one session | Requires | Done when | Status |
+| --- | --- | --- | --- | --- |
+| 1 | [Confirm the baseline](#starting-configuration) | Read access to GTM and HubSpot | The current GTM workspace and pending changes, HubSpot portal and loader, and consent behavior are recorded. | Pending |
+| 2 | [Map the six hosted form fields](#map-and-read-the-submitted-values) | 1 | The active controls and any submitted keys observable before confirmation are recorded from synthetic input. Intercept any outgoing booking request before it creates a booking. List keys that item 3 must verify on success. | Pending |
+| 3 | [Prove a usable booking success signal](#verify-the-success-signal) | 2 and an approved test booking | Evidence identifies a new confirmed booking, distinguishes it from an attempt or revisit, and shows how GTM can match it to the submitted values. Close any field mapping left open by item 2. | Pending |
+| 4 | [Check cross-domain tracking](#create-the-contact-and-preserve-attribution) | 1 | The actual Influx link and Cal.com landing carry the same portal's tracking identity with consent. Record any break and where it occurs. | Pending |
+| 5 | [Build and verify the GTM capture](#define-gtm-tags-and-the-success-event) | 2 and 3 | The scoped capture tag works in Preview. Verify the six fields, the success event, and silence on failure, reschedule, repeat handling, and denied consent using synthetic checks where possible. Record the draft GTM change IDs. | Pending |
+| 6 | [Wire HubSpot identification](#create-the-contact-and-preserve-attribution) | 5 | The exact delivery command and any HubSpot event name are recorded. Preview proves one email handoff and the two tracker calls in order, using a browser-only check with collection blocked. | Pending |
+| 7 | [Verify new-contact attribution](#verification) | 4 and 6, plus an approved test booking and new email | A single new contact has the tracked Influx and Cal.com journey and the expected source and campaign details. | Pending |
+| 8 | [Verify existing-contact attribution](#verification) | 7 and an approved follow-up test booking | The same contact gains the new tracked journey, reflects the latest source, and retains the original source. | Pending |
+| 9 | [Prepare the release](#workspace-changes-and-release) | 5–8 | The acceptance checks, proposed version contents, previous live version, and rollback approach are recorded for review. | Pending |
+| 10 | [Publish and smoke-test](#workspace-changes-and-release) | 9 and explicit authorization to publish | The expected GTM version is live and the agreed smoke check passes. | Pending |
+
+### Leave a handoff
+
+Update the selected row to **Complete** when its done condition is met. Use **In progress** if a later session can continue from partial results, or **Blocked** if it needs access, approval, or a missing capability. A resumable **In progress** item takes priority over starting another pending item. Include the date, item number, what changed, checks run and their results, and the exact next action or blocker in the latest handoff below. Link to sanitized evidence and include any GTM workspace change IDs. Keep project files here and commit only the repository changes for the selected item.
+
+**Latest handoff** — The relay is ready for item 1. The earlier read-only findings are in [Starting configuration](#starting-configuration).
+
 ## Starting configuration
 
 | Item | Target |
