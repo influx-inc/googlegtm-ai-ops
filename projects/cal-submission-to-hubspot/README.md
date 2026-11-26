@@ -10,7 +10,7 @@ Each item has a result the next session can use. If a selected item contains two
 
 | Item | Work for one session | Requires | Done when | Status |
 | --- | --- | --- | --- | --- |
-| 1 | [Confirm the baseline](#starting-configuration) | Read access to GTM and HubSpot | The current GTM workspace and pending changes, HubSpot portal and loader, and consent behavior are recorded. | Pending |
+| 1 | [Confirm the baseline](#starting-configuration) | Read access to GTM and HubSpot | The current GTM workspace and pending changes, HubSpot portal and loader, and consent behavior are recorded. | Complete |
 | 2 | [Map the six hosted form fields](#map-and-read-the-submitted-values) | 1 | The active controls and any submitted keys observable before confirmation are recorded from synthetic input. Intercept any outgoing booking request before it creates a booking. List keys that item 3 must verify on success. | Pending |
 | 3 | [Prove a usable booking success signal](#verify-the-success-signal) | 2 and an approved test booking | Evidence identifies a new confirmed booking, distinguishes it from an attempt or revisit, and shows how GTM can match it to the submitted values. Close any field mapping left open by item 2. | Pending |
 | 4 | [Check cross-domain tracking](#create-the-contact-and-preserve-attribution) | 1 | The actual Influx link and Cal.com landing carry the same portal's tracking identity with consent. Record any break and where it occurs. | Pending |
@@ -25,7 +25,9 @@ Each item has a result the next session can use. If a selected item contains two
 
 Update the selected row to **Complete** when its done condition is met. Use **In progress** if a later session can continue from partial results, or **Blocked** if it needs access, approval, or a missing capability. A resumable **In progress** item takes priority over starting another pending item. Include the date, item number, what changed, checks run and their results, and the exact next action or blocker in the latest handoff below. Link to sanitized evidence and include any GTM workspace change IDs. Keep project files here and commit only the repository changes for the selected item.
 
-**Latest handoff** — The relay is ready for item 1. The earlier read-only findings are in [Starting configuration](#starting-configuration).
+**Latest handoff — 26 November 2026, item 1 complete.** Verified Default Workspace `105`, live version `102`, the matching Influx HubSpot portal embed, and the loader on localhost and hosted Cal.com. The workspace still shows three unrelated additions and zero conflicts. The browser checks saw one blocked HubSpot page-view attempt on each route. This item made no GTM or HubSpot changes. See [baseline evidence](baseline.md).
+
+**Next** — Start item 2 on the hosted form. Install and verify booking-request interception before submitting distinct synthetic values, then record the six field mappings and any keys that item 3 must verify on success.
 
 ## Starting configuration
 
