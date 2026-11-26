@@ -1,6 +1,6 @@
 # Cal.com booking capture and HubSpot implementation relay
 
-Use Google Tag Manager (GTM) to capture the submitted values from **Meet with Influx** and detect when Cal.com confirms a new booking. On confirmation, use the existing HubSpot tracking code to create a contact if the primary booker's email is new or update the contact that already matches it. In both cases, HubSpot must associate the analytics recorded for that visitor across the Influx and Cal.com domains, including page history and available source, referrer, and campaign details.
+Use Google Tag Manager (GTM) to capture the primary booker's name, email address, and company name from **Meet with Influx**. When Cal.com confirms a new booking, use the existing HubSpot tracking code to create or update the contact by email and send those three answers. HubSpot must associate the analytics recorded for that visitor across the Influx and Cal.com domains, including page history and available source, referrer, and campaign details.
 
 ## Start here for each session
 
@@ -11,11 +11,11 @@ Each item has a result the next session can use. If a selected item contains two
 | Item | Work for one session | Requires | Done when | Status |
 | --- | --- | --- | --- | --- |
 | 1 | [Confirm the baseline](#starting-configuration) | Read access to GTM and HubSpot | The current GTM workspace and pending changes, HubSpot portal and loader, and consent behavior are recorded. | Complete |
-| 2 | [Map the six hosted form fields](#map-and-read-the-submitted-values) | 1 | The active controls and any submitted keys observable before confirmation are recorded from synthetic input. Intercept any outgoing booking request before it creates a booking. List keys that item 3 must verify on success. | Pending |
+| 2 | [Map the three contact fields](#map-and-read-the-submitted-values) | 1 | The active controls and submitted keys are verified with synthetic input and a blocked booking request. Record the keys that item 3 must verify on success. | Complete |
 | 3 | [Prove a usable booking success signal](#verify-the-success-signal) | 2 and an approved test booking | Evidence identifies a new confirmed booking, distinguishes it from an attempt or revisit, and shows how GTM can match it to the submitted values. Close any field mapping left open by item 2. | Pending |
 | 4 | [Check cross-domain tracking](#create-the-contact-and-preserve-attribution) | 1 | The actual Influx link and Cal.com landing carry the same portal's tracking identity with consent. Record any break and where it occurs. | Pending |
-| 5 | [Build and verify the GTM capture](#define-gtm-tags-and-the-success-event) | 2 and 3 | The scoped capture tag works in Preview. Verify the six fields, the success event, and silence on failure, reschedule, repeat handling, and denied consent using synthetic checks where possible. Record the draft GTM change IDs. | Pending |
-| 6 | [Wire HubSpot identification](#create-the-contact-and-preserve-attribution) | 5 | The exact delivery command and any HubSpot event name are recorded. Preview proves one email handoff and the two tracker calls in order, using a browser-only check with collection blocked. | Pending |
+| 5 | [Build and verify the GTM capture](#define-gtm-tags-and-the-success-event) | 2 and 3 | The scoped capture tag works in Preview. Verify the three fields, the success event, and silence on failure, reschedule, repeat handling, and denied consent using synthetic checks where possible. Record the draft GTM change IDs. | Pending |
+| 6 | [Wire HubSpot identification](#create-the-contact-and-preserve-attribution) | 5 | The exact delivery command and any HubSpot event name are recorded. Preview proves one three-field handoff and the two tracker calls in order, using a browser-only check with collection blocked. | Pending |
 | 7 | [Verify new-contact attribution](#verification) | 4 and 6, plus an approved test booking and new email | A single new contact has the tracked Influx and Cal.com journey and the expected source and campaign details. | Pending |
 | 8 | [Verify existing-contact attribution](#verification) | 7 and an approved follow-up test booking | The same contact gains the new tracked journey, reflects the latest source, and retains the original source. | Pending |
 | 9 | [Prepare the release](#workspace-changes-and-release) | 5–8 | The acceptance checks, proposed version contents, previous live version, and rollback approach are recorded for review. | Pending |
@@ -25,9 +25,9 @@ Each item has a result the next session can use. If a selected item contains two
 
 Update the selected row to **Complete** when its done condition is met. Use **In progress** if a later session can continue from partial results, or **Blocked** if it needs access, approval, or a missing capability. A resumable **In progress** item takes priority over starting another pending item. Include the date, item number, what changed, checks run and their results, and the exact next action or blocker in the latest handoff below. Link to sanitized evidence and include any GTM workspace change IDs. Keep project files here and commit only the repository changes for the selected item.
 
-**Latest handoff — 26 November 2026, item 1 complete.** Verified Default Workspace `105`, live version `102`, the matching Influx HubSpot portal embed, and the loader on localhost and hosted Cal.com. The workspace still shows three unrelated additions and zero conflicts. The browser checks saw one blocked HubSpot page-view attempt on each route. This item made no GTM or HubSpot changes. See [baseline evidence](baseline.md).
+**Latest handoff — 26 November 2026, item 2 complete.** Verified name, email, and company in the active form and in two intercepted `POST /api/book/event` requests. Both requests were blocked before reaching Cal.com. The user limited HubSpot delivery to these three answers. See [field evidence](field-mapping.md) and [the GTM and HubSpot baseline](baseline.md).
 
-**Next** — Start item 2 on the hosted form. Install and verify booking-request interception before submitting distinct synthetic values, then record the six field mappings and any keys that item 3 must verify on success.
+**Next** — Obtain approval for a test booking, then verify the successful response and the browser signal GTM can use to correlate it with `responses.name`, `responses.email`, and `responses.company`.
 
 ## Starting configuration
 
@@ -54,18 +54,15 @@ Start with the [repository instructions](../../AGENTS.md), [GTM workspace operat
 
 ### Map and read the submitted values
 
-Use synthetic, distinct values for each answer during inspection. Select controls within the active booking form and verify their actual `name`, type, and submitted key against the outgoing booking request or success payload. The labels below describe the current fields. Fill in the exact keys from Preview before implementing the mapping.
+The hosted form submitted the following keys in the [intercepted booking request](field-mapping.md). Check whether the success signal exposes those same answers before choosing a capture method.
 
-| Booking field | Required | Capture rule |
+| Booking field | Active control | Booking request key |
 | --- | --- | --- |
-| Your name | Yes | Read the primary booker's full name from the active name control. |
-| Email address | Yes | Read the primary booker's email from the active email control. Keep guest emails outside the capture. |
-| Company Name | Yes | Read the submitted company name. |
-| Tell us what you need | Yes | Read the submitted textarea value. |
-| How you describe your business | No | Read the submitted answer or leave it empty. |
-| Where did you hear about us? | No | Read the submitted answer or leave it empty. This is separate from HubSpot's tracked acquisition source. |
+| Your name | `input[type=text][name=name]` | `responses.name` |
+| Email address | `input[type=email][name=email]` | `responses.email` |
+| Company Name | `input[type=text][name=company]` | `responses.company` |
 
-Prefer reading these six values from the verified success signal when it contains them. Otherwise, have the GTM capture tag register a single delegated `submit` listener on the scoped page, early enough to see submissions after the React form mounts. Filter to the active booking form and read current values at submission time. Verify in Preview that the listener sees both button and keyboard submissions. Use the field map to exclude disabled, hidden, or duplicate controls, and build a fresh snapshot per attempt so optional blanks and retries cannot inherit old answers. Keep the snapshot in page memory only.
+Prefer reading these three values from the verified success signal when it contains them. Otherwise, have the GTM capture tag register a single delegated `submit` listener on the scoped page, early enough to see submissions after the React form mounts. Filter to the active booking form and read current values at submission time. Verify in Preview that the listener sees both button and keyboard submissions. Use the field map to exclude disabled, hidden, or duplicate controls, and build a fresh in-memory snapshot per attempt.
 
 Match that snapshot to the corresponding confirmation using the correlation verified in Preview. If the booking fails or the form is abandoned, discard the snapshot. Replace it on retry, and clear it after successful use. If success occurs in a new document, the in-memory snapshot is lost. Require a verified success signal that makes the values available to GTM there before proceeding with that flow.
 
@@ -77,18 +74,18 @@ Follow the container's naming conventions and keep the existing HubSpot loader a
 | --- | --- |
 | Scoped capture tag | Initialize once per document for the verified Meet with Influx flow, including any verified confirmation route needed for the selected signal. Apply the site's analytics consent rules before capturing or sending values. Register the success listener and, if needed, the form listener. Verify listener setup timing against the booking signal. |
 | Success event | Use a GTM Custom Event named `cal_influx_booking_confirmed` after the listener has matched the values to a new confirmed booking. Push only `{ event: 'cal_influx_booking_confirmed' }` into the existing data layer. Keep field values and the booking correlation identifier in memory. |
-| HubSpot tag | Trigger on that exact event with the verified Cal.com scope and analytics consent. Consume the matching email once through an in-memory handoff and queue HubSpot identification and delivery in order. Suppress repeated handling of the same booking. Verify the signal and deduplication together across reloads and navigation. |
+| HubSpot tag | Trigger on that exact event with the verified Cal.com scope and analytics consent. Consume the primary booker's name, email, and company once through an in-memory handoff, then queue HubSpot identification and delivery in order. Suppress repeated handling of the same booking. Verify the signal and deduplication together across reloads and navigation. |
 
-The handoff can use a page-scoped function registered by the capture tag that returns the pending email once and clears the captured values. Gate the call on the verified event and consent. Check that the email is present and valid before queuing identity. If the site allows analytics consent to be granted after page load, verify that the capture tag initializes on the applicable consent update and handles subsequent submissions. Keep the raw values out of GTM data-layer variables, persistent browser storage, URLs added by this implementation, console logging, and task evidence. Other tags receive only the success event. Keep the other five answers within the GTM capture logic unless a separate field mapping to HubSpot is requested. [GTM data layer](https://developers.google.com/tag-platform/tag-manager/datalayer) · [GTM Custom Event triggers](https://support.google.com/tagmanager/answer/7679219)
+The handoff can use a page-scoped function registered by the capture tag that returns the three pending values once and clears them. Gate the call on the verified event and consent. Check that the email is present and valid before queuing identity. If the site allows analytics consent to be granted after page load, verify that the capture tag initializes on the applicable consent update and handles subsequent submissions. Keep the raw values out of GTM data-layer variables, persistent browser storage, URLs added by this implementation, console logging, and task evidence. Other tags receive only the success event. [GTM data layer](https://developers.google.com/tag-platform/tag-manager/datalayer) · [GTM Custom Event triggers](https://support.google.com/tagmanager/answer/7679219)
 
 ## Create the contact and preserve attribution
 
 1. Verify the HubSpot portal supports custom events. Find or configure a single contact-associated event for the confirmed booking and record its generated internal name. Verify that an existing tag or integration does not already emit it. [Create custom events](https://knowledge.hubspot.com/reports/create-custom-events)
-2. In the HubSpot tag, identify the primary booker by email, then send the event. The example assumes `email` comes from the one-time handoff and `eventName` is the verified HubSpot internal name. `identify` queues the identity. The second call sends it so HubSpot can create or update the contact and link the browser's visitor token. [Identify a visitor](https://developers.hubspot.com/docs/api-reference/latest/account/settings/tracking-code/identify) · [Track custom events](https://developers.hubspot.com/docs/api-reference/latest/account/settings/tracking-code/track-event)
+2. In the HubSpot tag, identify the primary booker by email, then send the event. Use the contact properties `email`, `firstname`, `lastname`, and `company`. Follow HubSpot's full-name mapping convention by taking the first word as `firstname` and the rest as `lastname`. For a one-word name, omit `lastname`. Map the submitted company name to the contact's Company name field. The second tracker call sends the queued identity and links the visitor token. Verify that HubSpot stores the name and company on the contact during the approved delivery checks. [Identify a visitor](https://developers.hubspot.com/docs/api-reference/latest/account/settings/tracking-code/identify) · [Name mapping](https://knowledge.hubspot.com/integrations/understand-your-data-sync-field-mappings) · [Default contact properties](https://knowledge.hubspot.com/properties/hubspots-default-contact-properties)
 
    ```js
    window._hsq = window._hsq || [];
-   window._hsq.push(['identify', { email: email }]);
+   window._hsq.push(['identify', contactProperties]);
    window._hsq.push(['trackCustomBehavioralEvent', { name: eventName }]);
    ```
 
@@ -103,8 +100,7 @@ Start with localhost and scoped synthetic checks. Use the hosted form for the ac
 
 | Scenario | Expected result |
 | --- | --- |
-| Confirmed booking by button and by keyboard | GTM reads the six expected values, associates each attempt with its correct booking, emits one success event per booking, and makes one identified HubSpot send. |
-| Optional answers empty | Both optional values stay empty, including after a prior attempt with values. |
+| Confirmed booking by button and by keyboard | GTM reads name, email, and company, associates each attempt with its correct booking, emits one success event per booking, and makes one identified HubSpot send. |
 | Validation failure, failed booking request, then successful retry | No identified send on failure. The confirmed retry uses its own submitted values and sends once. |
 | Abandonment, slot selection, unrelated booking, or reschedule | No booking success event or identified send from this project. |
 | Confirmation reload, back/forward navigation, or repeated success callback | No second event or identified send for the same booking. |
@@ -112,11 +108,11 @@ Start with localhost and scoped synthetic checks. Use the hosted form for the ac
 | New email from a known campaign | Start in a fresh browser state with an approved email that has no contact. Follow the real Influx link to Cal.com. Verify exactly one new contact with the tracked Influx landing page and subsequent page activity, the Cal.com booking activity, and the expected Original and Latest Traffic Source and available referrer and campaign details. |
 | Existing contact from a different known campaign | Record the existing contact's ID and Original Traffic Source. Start in a fresh browser state with a distinct known campaign and book using the existing email. Verify that the same contact gains the current journey's tracked Influx and Cal.com activity without creating a duplicate. Check Latest Traffic Source and its available campaign details after HubSpot processes the visit. Verify that the earlier Original Traffic Source remains. |
 
-For both contact scenarios, check the booking custom event on the timeline if used, verify the expected page-view count, and record contact matching and analytics attribution as separate results. A network send or matched contact alone is insufficient for release. For each check, record the workspace or version, environment, scenario, consent state, expected and observed tag and request counts, and the HubSpot result. Record blocked or unavailable checks with the reason. Keep evidence in this project folder and leave out field values, tracking identifiers, full decorated URLs, credentials, and unreviewed HAR files. Close and verify cleanup of any task-owned browser session after saving evidence.
+For both contact scenarios, verify the contact's name, email, and company, check the booking custom event on the timeline if used, and verify the expected page-view count. Record contact matching and analytics attribution as separate results. A network send or matched contact alone is insufficient for release. For each check, record the workspace or version, environment, scenario, consent state, expected and observed tag and request counts, and the HubSpot result. Record blocked or unavailable checks with the reason. Keep evidence in this project folder and leave out field values, tracking identifiers, full decorated URLs, credentials, and unreviewed HAR files. Close and verify cleanup of any task-owned browser session after saving evidence.
 
 ## Workspace changes and release
 
-- [ ] Record the observed Cal.com signal, how it correlates to a new booking, the six field keys, the consent decision, the verified HubSpot portal and event name, and the chosen delivery command.
+- [ ] Record the observed Cal.com signal, how it correlates to a new booking, the three field keys, the consent decision, the verified HubSpot portal and event name, and the chosen delivery command.
 - [ ] Recheck workspace status before editing. Add the scoped capture and HubSpot tags and the associated trigger. Re-read the changed entities and workspace status. Preserve unrelated edits and retain the GTM change IDs and sanitized test results in this folder.
 - [ ] Complete Preview and HubSpot verification. Record the previous live GTM version and review the full set of changes included in the proposed version. If it contains unrelated pending changes, resolve the release scope before publishing.
 - [ ] Obtain explicit authorization before publishing. After an authorized publish, confirm the live version and repeat the agreed smoke check for the booking path and HubSpot attribution.
